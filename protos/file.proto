@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package file;
+
+option go_package = "./pb";
+
+// Unary RPC
+message ListFilesRequest {};
+message ListFilesResponse { repeated string filenames = 1; };
+
+// Server Streaming RPC
+message DownloadRequest { string filename = 1; };
+message DownloadResponse { bytes data = 1; };
+
+// Client Streaming RPC
+message UploadRequest { bytes data = 1; };
+message UploadResponse { int32 size = 1; };
+
+// Bidirectional Streaming RPC
+message UploadAndNotifyProgressRequest { bytes data = 1; };
+message UploadAndNotifyProgressResponse { string msg = 1; };
+
+service FileService {
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+  rpc Download(DownloadRequest) returns (stream DownloadResponse);
+  rpc Upload(stream UploadRequest) returns (UploadResponse);
+  rpc UploadAndNotifyProgress(stream UploadAndNotifyProgressRequest)
+      returns (stream UploadAndNotifyProgressResponse);
+}
