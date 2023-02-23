@@ -21,10 +21,10 @@ func main() {
 	defer conn.Close()
 
 	client := pb.NewFileServiceClient(conn)
-	// CallListFiles(client)
+	CallListFiles(client)
 	// CallDownload(client)
 	// CallUpload(client)
-	CallUploadAndNotifyProgress(client)
+	// CallUploadAndNotifyProgress(client)
 }
 
 func getPathFromEnv(envPath string) string {
