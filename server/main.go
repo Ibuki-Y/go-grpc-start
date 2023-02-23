@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"go-grpc/pb"
 	"io"
@@ -13,6 +14,9 @@ import (
 
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
+
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 )
 
 type server struct {
@@ -150,13 +154,28 @@ func myLogging() grpc.UnaryServerInterceptor {
 	}
 }
 
+func authorize(ctx context.Context) (context.Context, error) {
+	token, err := grpc_auth.AuthFromMD(ctx, "Bearer")
+	if err != nil {
+		return nil, err
+	}
+	if token != "test-token" {
+		return nil, errors.New("bad token")
+	}
+	return ctx, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", "localhost:50051")
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer(grpc.UnaryInterceptor(myLogging()))
+	s := grpc.NewServer(grpc.UnaryInterceptor(
+		grpc_middleware.ChainUnaryServer(
+			myLogging(),
+			grpc_auth.UnaryServerInterceptor(authorize),
+		)))
 	pb.RegisterFileServiceServer(s, &server{})
 
 	fmt.Println("server is running...")

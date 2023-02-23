@@ -11,6 +11,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 func main() {
@@ -38,7 +39,10 @@ func getPathFromEnv(envPath string) string {
 }
 
 func CallListFiles(client pb.FileServiceClient) {
-	res, err := client.ListFiles(context.Background(), &pb.ListFilesRequest{})
+	md := metadata.New(map[string]string{"authorization": "Bearer test-token"})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+	res, err := client.ListFiles(ctx, &pb.ListFilesRequest{})
 	if err != nil {
 		log.Fatalln(err)
 	}
