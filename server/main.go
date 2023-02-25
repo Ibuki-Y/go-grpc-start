@@ -14,6 +14,7 @@ import (
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -177,11 +178,21 @@ func main() {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer(grpc.UnaryInterceptor(
-		grpc_middleware.ChainUnaryServer(
-			myLogging(),
-			grpc_auth.UnaryServerInterceptor(authorize),
-		)))
+	creds, err := credentials.NewServerTLSFromFile(
+		getPathFromEnv("SSL_LOCALHOST_PATH"),
+		getPathFromEnv("SSL_KEY_PATH"),
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	s := grpc.NewServer(
+		grpc.Creds(creds),
+		grpc.UnaryInterceptor(
+			grpc_middleware.ChainUnaryServer(
+				myLogging(),
+				grpc_auth.UnaryServerInterceptor(authorize),
+			)))
 	pb.RegisterFileServiceServer(s, &server{})
 
 	fmt.Println("server is running...")
