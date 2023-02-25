@@ -11,7 +11,9 @@ import (
 
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -22,8 +24,8 @@ func main() {
 	defer conn.Close()
 
 	client := pb.NewFileServiceClient(conn)
-	CallListFiles(client)
-	// CallDownload(client)
+	// CallListFiles(client)
+	CallDownload(client)
 	// CallUpload(client)
 	// CallUploadAndNotifyProgress(client)
 }
@@ -63,7 +65,16 @@ func CallDownload(client pb.FileServiceClient) {
 			break
 		}
 		if err != nil {
-			log.Fatalln(err)
+			resErr, ok := status.FromError(err)
+			if ok {
+				if resErr.Code() == codes.NotFound {
+					log.Fatalf("Error Code: %v, Error Message: %v", resErr.Code(), resErr.Message())
+				} else {
+					log.Fatalln("unknow grpc error")
+				}
+			} else {
+				log.Fatalln(err)
+			}
 		}
 
 		log.Printf("Response from Download(bytes): %v", res.GetData())
